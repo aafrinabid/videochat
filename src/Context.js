@@ -1,5 +1,6 @@
 import React, { createContext, useState, useRef, useEffect } from 'react';
 import { io } from 'socket.io-client';
+
 import Peer from 'simple-peer';
 // import e, { json } from 'express';
 
@@ -9,6 +10,7 @@ const SocketContext = createContext();
 const socket = io('https://sleepy-sierra-81358.herokuapp.com/');
 
 const ContextProvider = ({ children }) => {
+  const [open,setOpen]=useState(false)
   const [callAccepted, setCallAccepted] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
   const [stream, setStream] = useState();
@@ -64,8 +66,14 @@ console.log(call)
         rc.dc=e.channel
         rc.dc.onmessage=e=>console.log('new message is here'+e.data)
         rc.dc.onopen=e=>console.log('connection OPENED')
+        // rc.dc.on
       }
-
+      stream.getTracks().forEach(function (track) {
+        rc.addTrack(track, stream);
+      });
+      rc.ontrack=(e)=>{
+        userVideo.current.srcObject=e.streams[0]
+       }
       rc.addEventListener('icegatheringstatechange',(ev)=>{
         let connection=ev.target;
         switch(connection.iceGatheringState){
@@ -136,6 +144,17 @@ console.log(call)
      const sendChannel=localConnection.createDataChannel('sendChannel')
      sendChannel.onmessage=e=>console.log('message recieved!!!'+e.data)
      sendChannel.onopen=e=>console.log('connection open')
+     stream.getTracks().forEach(function (track) {
+      localConnection.addTrack(track, stream);
+    });
+     localConnection.ontrack=(e)=>{
+      userVideo.current.srcObject=e.streams[0]
+     }
+  // sendChannel.addEventListener('')
+     if(open===true){
+
+       sendChannel.send('heyy yoooooooooooooo')
+     }
       
      localConnection.createOffer().then(o=>localConnection.setLocalDescription(o)).then(a=>console.log(a,'setSuccesfully'))
     //  setTimeout(socketCon,10000)
@@ -153,7 +172,7 @@ console.log(call)
                 // setOffer(JSON.stringify(localConnection.localDescription))
                 const offer=localConnection.localDescription
                 socket.emit('callUser', { userToCall: id, signalData: offer, from: me, name })
-
+                
 
                }
 
